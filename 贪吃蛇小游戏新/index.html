@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEON SNAKE // 霓虹贪吃蛇</title>
+<style>
+  :root{
+    --bg:#06010f;
+    --bg2:#0d0420;
+    --blue:#00f0ff;
+    --purple:#bf00ff;
+    --green:#39ff14;
+    --pink:#ff0055;
+    --card:rgba(18,6,38,0.72);
+    --border:rgba(0,240,255,0.35);
+    --text:#d7f9ff;
+    --muted:#7a6aa8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Segoe UI","Microsoft YaHei",sans-serif;
+    background:
+      radial-gradient(1200px 700px at 80% -10%, rgba(191,0,255,0.25), transparent 60%),
+      radial-gradient(900px 600px at -10% 110%, rgba(0,240,255,0.22), transparent 60%),
+      linear-gradient(180deg,var(--bg),var(--bg2));
+    color:var(--text);
+    min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    padding:18px;
+    overflow-x:hidden;
+  }
+  /* 背景网格流光 */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:
+      linear-gradient(rgba(0,240,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(191,0,255,0.06) 1px, transparent 1px);
+    background-size:42px 42px;
+    mask-image:radial-gradient(circle at 50% 50%, #000 30%, transparent 80%);
+    animation:gridmove 18s linear infinite;
+  }
+  @keyframes gridmove{from{background-position:0 0,0 0}to{background-position:42px 42px,42px 42px}}
+
+  .app{
+    position:relative;z-index:1;
+    width:min(960px,100%);
+    display:grid;
+    grid-template-columns:1fr 280px;
+    gap:22px;
+  }
+  @media (max-width:820px){.app{grid-template-columns:1fr}}
+
+  /* 卡片 + 霓虹渐变边框 */
+  .card{
+    position:relative;
+    background:var(--card);
+    border-radius:18px;
+    padding:20px;
+    backdrop-filter:blur(10px);
+    box-shadow:0 0 0 1px var(--border), 0 10px 40px rgba(0,0,0,0.6), inset 0 0 30px rgba(191,0,255,0.06);
+  }
+  .card::before{
+    content:"";position:absolute;inset:-1px;border-radius:19px;padding:1px;
+    background:linear-gradient(135deg,var(--blue),var(--purple),var(--pink),var(--green),var(--blue));
+    background-size:300% 300%;
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    animation:borderflow 6s linear infinite;
+    pointer-events:none;opacity:.85;
+  }
+  @keyframes borderflow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+  /* 标题故障艺术 */
+  .title{
+    font-weight:900;letter-spacing:3px;
+    font-size:clamp(26px,4vw,40px);
+    background:linear-gradient(90deg,var(--blue),var(--purple),var(--pink));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 18px rgba(0,240,255,0.35);
+    position:relative;display:inline-block;
+  }
+  .title::after,.title::before{
+    content:attr(data-t);position:absolute;left:0;top:0;width:100%;
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .title::before{background:linear-gradient(90deg,var(--pink),transparent);transform:translate(2px,0);mix-blend-mode:screen;animation:glitch 2.6s infinite linear;opacity:.6}
+  .title::after{background:linear-gradient(90deg,transparent,var(--blue));transform:translate(-2px,0);mix-blend-mode:screen;animation:glitch 3.1s infinite linear reverse;opacity:.6}
+  @keyframes glitch{
+    0%,92%,100%{clip-path:inset(0 0 0 0)}
+    93%{clip-path:inset(20% 0 60% 0);transform:translate(3px,-1px)}
+    95%{clip-path:inset(60% 0 10% 0);transform:translate(-3px,1px)}
+    97%{clip-path:inset(40% 0 40% 0);transform:translate(2px,2px)}
+  }
+  .subtitle{color:var(--muted);font-size:12px;letter-spacing:6px;margin-top:4px}
+
+  .stage{display:flex;flex-direction:column;gap:14px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .scorebox{display:flex;gap:10px;flex-wrap:wrap}
+  .stat{
+    background:rgba(0,0,0,0.35);border:1px solid rgba(0,240,255,0.18);
+    border-radius:12px;padding:8px 14px;min-width:96px;
+  }
+  .stat .k{font-size:10px;color:var(--muted);letter-spacing:2px}
+  .stat .v{font-size:22px;font-weight:800;color:var(--green);text-shadow:0 0 12px rgba(57,255,20,0.6)}
+  .stat.pink .v{color:var(--pink);text-shadow:0 0 12px rgba(255,0,85,0.6)}
+  .stat.blue .v{color:var(--blue);text-shadow:0 0 12px rgba(0,240,255,0.6)}
+
+  .canvas-wrap{
+    position:relative;border-radius:14px;overflow:hidden;
+    background:#03000a;
+    box-shadow:inset 0 0 0 1px rgba(0,240,255,0.18), inset 0 0 40px rgba(191,0,255,0.12);
+  }
+  canvas{display:block;width:100%;height:auto;image-rendering:pixelated}
+
+  /* 覆盖层 */
+  .overlay{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:14px;
+    background:radial-gradient(circle at center, rgba(6,1,15,0.55), rgba(6,1,15,0.92));
+    backdrop-filter:blur(2px);transition:opacity .25s;
+  }
+  .overlay.hidden{opacity:0;pointer-events:none}
+  .overlay h2{
+    font-size:clamp(28px,5vw,52px);font-weight:900;letter-spacing:4px;
+    background:linear-gradient(90deg,var(--blue),var(--pink));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 24px rgba(0,240,255,0.4);
+    animation:flicker 3s infinite;
+  }
+  @keyframes flicker{0%,18%,22%,25%,53%,57%,100%{opacity:1}19%,23%,54%,56%{opacity:.4}}
+  .overlay p{color:var(--muted);letter-spacing:2px;font-size:13px;text-align:center;line-height:1.8}
+  .overlay .big{font-size:40px;color:var(--green);text-shadow:0 0 18px rgba(57,255,20,0.7);font-weight:900}
+
+  .btn{
+    cursor:pointer;border:none;border-radius:12px;
+    padding:12px 26px;font-weight:800;letter-spacing:2px;font-size:14px;
+    color:#06010f;background:linear-gradient(90deg,var(--blue),var(--green));
+    box-shadow:0 0 18px rgba(0,240,255,0.5),0 0 40px rgba(57,255,20,0.25);
+    transition:transform .12s, box-shadow .2s, filter .2s;
+  }
+  .btn:hover{transform:translateY(-2px);filter:brightness(1.1);box-shadow:0 0 28px rgba(0,240,255,0.8),0 0 60px rgba(57,255,20,0.4)}
+  .btn:active{transform:translateY(0)}
+  .btn.alt{background:linear-gradient(90deg,var(--purple),var(--pink));color:#fff;box-shadow:0 0 18px rgba(191,0,255,0.5),0 0 40px rgba(255,0,85,0.25)}
+  .btn.alt:hover{box-shadow:0 0 28px rgba(191,0,255,0.8),0 0 60px rgba(255,0,85,0.4)}
+
+  /* 侧栏 */
+  .side{display:flex;flex-direction:column;gap:18px}
+  .side h3{font-size:13px;letter-spacing:3px;color:var(--blue);margin-bottom:10px;text-shadow:0 0 10px rgba(0,240,255,0.5)}
+  .keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .key{
+    background:rgba(0,0,0,0.4);border:1px solid rgba(191,0,255,0.25);
+    border-radius:10px;padding:10px 0;text-align:center;font-weight:800;
+    color:var(--purple);text-shadow:0 0 8px rgba(191,0,255,0.6);
+  }
+  .key.empty{visibility:hidden}
+  .tip{font-size:12px;color:var(--muted);line-height:1.9;letter-spacing:1px}
+  .tip b{color:var(--green)}
+  .legend{display:flex;flex-direction:column;gap:8px;font-size:12px}
+  .legend .row{display:flex;align-items:center;gap:10px}
+  .dot{width:14px;height:14px;border-radius:4px}
+  .dot.g{background:var(--green);box-shadow:0 0 10px var(--green)}
+  .dot.p{background:var(--pink);box-shadow:0 0 10px var(--pink)}
+  .dot.b{background:var(--blue);box-shadow:0 0 10px var(--blue)}
+
+  .footer{margin-top:14px;text-align:center;color:var(--muted);font-size:11px;letter-spacing:2px}
+  .pill{display:inline-block;padding:2px 10px;border-radius:20px;border:1px solid rgba(0,240,255,0.3);color:var(--blue);margin:0 4px}
+
+  /* 移动端方向键 */
+  .dpad{display:none;grid-template-columns:repeat(3,56px);grid-template-rows:repeat(3,56px);gap:8px;justify-content:center;margin-top:6px}
+  .dpad button{
+    cursor:pointer;border:1px solid rgba(0,240,255,0.3);border-radius:12px;
+    background:rgba(0,0,0,0.4);color:var(--blue);font-size:22px;font-weight:800;
+    text-shadow:0 0 8px rgba(0,240,255,0.6);
+  }
+  .dpad button:active{background:rgba(0,240,255,0.18)}
+  .dpad .u{grid-column:2;grid-row:1}
+  .dpad .l{grid-column:1;grid-row:2}
+  .dpad .r{grid-column:3;grid-row:2}
+  .dpad .d{grid-column:2;grid-row:3}
+  @media (max-width:820px){.dpad{display:grid}}
+</style>
+</head>
+<body>
+  <div class="app">
+    <!-- 主舞台 -->
+    <div class="stage">
+      <div class="card">
+        <div class="topbar">
+          <div>
+            <div class="title" data-t="NEON SNAKE">NEON SNAKE</div>
+            <div class="subtitle">霓 虹 贪 吃 蛇 · CYBER ARCADE</div>
+          </div>
+          <div class="scorebox">
+            <div class="stat blue"><div class="k">SCORE</div><div class="v" id="score">0</div></div>
+            <div class="stat pink"><div class="k">BEST</div><div class="v" id="best">0</div></div>
+            <div class="stat"><div class="k">SPEED</div><div class="v" id="speed">1</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="canvas-wrap">
+          <canvas id="game" width="600" height="600"></canvas>
+          <div class="overlay" id="overlay">
+            <h2 id="ovTitle">READY</h2>
+            <p id="ovText">使用 <b style="color:var(--green)">方向键</b> 或 <b style="color:var(--blue)">WASD</b> 控制蛇身<br>吃下霓虹光点，避开墙壁与自身</p>
+            <button class="btn" id="startBtn">开始游戏</button>
+          </div>
+        </div>
+        <div class="dpad" id="dpad">
+          <button class="u">▲</button>
+          <button class="l">◀</button>
+          <button class="r">▶</button>
+          <button class="d">▼</button>
+        </div>
+        <div class="footer">
+          <span class="pill">SPACE</span> 暂停 / 继续 &nbsp;·&nbsp; <span class="pill">R</span> 重新开始
+        </div>
+      </div>
+    </div>
+
+    <!-- 侧栏 -->
+    <div class="side">
+      <div class="card">
+        <h3>OPERATION</h3>
+        <div class="keys">
+          <div class="key empty"></div><div class="key">W</div><div class="key empty"></div>
+          <div class="key">A</div><div class="key">S</div><div class="key">D</div>
+        </div>
+        <div class="tip" style="margin-top:12px">
+          同时支持 <b>↑ ↓ ← →</b> 方向键。<br>
+          移动端可使用屏幕方向键。
+        </div>
+      </div>
+      <div class="card">
+        <h3>LEGEND</h3>
+        <div class="legend">
+          <div class="row"><div class="dot g"></div><span>蛇身 · 青柠霓虹</span></div>
+          <div class="row"><div class="dot p"></div><span>食物 · 玫红光点</span></div>
+          <div class="row"><div class="dot b"></div><span>边界 · 电光蓝栅栏</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>RULES</h3>
+        <div class="tip">
+          · 每吃 1 个光点 <b>+10</b> 分<br>
+          · 每 50 分速度 <b>+1</b> 级<br>
+          · 撞墙或撞自身即结束<br>
+          · 最高分自动保存本地
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const canvas=document.getElementById('game');
+  const ctx=canvas.getContext('2d');
+  const COLS=24, ROWS=24;
+  let CELL=canvas.width/COLS;
+
+  // 自适应画布
+  function resize(){
+    const wrap=canvas.parentElement;
+    const size=Math.min(wrap.clientWidth, 600);
+    canvas.width=size; canvas.height=size;
+    CELL=canvas.width/COLS;
+  }
+  window.addEventListener('resize',resize);
+
+  const scoreEl=document.getElementById('score');
+  const bestEl=document.getElementById('best');
+  const speedEl=document.getElementById('speed');
+  const overlay=document.getElementById('overlay');
+  const ovTitle=document.getElementById('ovTitle');
+  const ovText=document.getElementById('ovText');
+  const startBtn=document.getElementById('startBtn');
+
+  let snake, dir, nextDir, food, score, best, speed, alive, running, tick, acc, last;
+  let particles=[];
+
+  best=parseInt(localStorage.getItem('neon_snake_best')||'0',10);
+  bestEl.textContent=best;
+
+  function reset(){
+    snake=[{x:8,y:12},{x:7,y:12},{x:6,y:12}];
+    dir={x:1,y:0}; nextDir={x:1,y:0};
+    score=0; speed=1; alive=true; running=false;
+    particles=[]; acc=0; tick=0;
+    placeFood();
+    updateHUD();
+  }
+
+  function placeFood(){
+    while(true){
+      const x=Math.floor(Math.random()*COLS);
+      const y=Math.floor(Math.random()*ROWS);
+      if(!snake.some(s=>s.x===x&&s.y===y)){food={x,y};return;}
+    }
+  }
+
+  function updateHUD(){
+    scoreEl.textContent=score;
+    bestEl.textContent=best;
+    speedEl.textContent=speed;
+  }
+
+  function showOverlay(title,html,btnText){
+    ovTitle.textContent=title;
+    ovText.innerHTML=html;
+    startBtn.textContent=btnText;
+    overlay.classList.remove('hidden');
+  }
+  function hideOverlay(){overlay.classList.add('hidden')}
+
+  function start(){
+    reset();
+    running=true;
+    hideOverlay();
+    last=performance.now();
+    requestAnimationFrame(loop);
+  }
+
+  function gameOver(){
+    alive=false; running=false;
+    if(score>best){best=score;localStorage.setItem('neon_snake_best',best);}
+    updateHUDA();
+    showOverlay('GAME OVER',
+      `本局得分 <span class="big">${score}</span><br>最高分 <b style="color:var(--pink)">${best}</b>`,
+      '再来一局');
+  }
+  function updateHUDA(){updateHUD()}
+
+  function step(){
+    dir=nextDir;
+    const head={x:snake[0].x+dir.x,y:snake[0].y+dir.y};
+    // 撞墙
+    if(head.x<0||head.y<0||head.x>=COLS||head.y>=ROWS){gameOver();return;}
+    // 撞自身
+    if(snake.some(s=>s.x===head.x&&s.y===head.y)){gameOver();return;}
+    snake.unshift(head);
+    if(head.x===food.x&&head.y===food.y){
+      score+=10;
+      const newSpeed=1+Math.floor(score/50);
+      if(newSpeed!==speed)speed=newSpeed;
+      spawnParticles(food.x,food.y);
+      placeFood();
+      updateHUD();
+    }else{
+      snake.pop();
+    }
+  }
+
+  function spawnParticles(cx,cy){
+    const px=(cx+0.5)*CELL, py=(cy+0.5)*CELL;
+    for(let i=0;i<18;i++){
+      const a=Math.random()*Math.PI*2, sp=1+Math.random()*3;
+      particles.push({x:px,y:py,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,color:Math.random()<0.5?'#ff0055':'#39ff14'});
+    }
+  }
+
+  function draw(){
+    const w=canvas.width,h=canvas.height;
+    // 背景
+    ctx.fillStyle='#03000a';
+    ctx.fillRect(0,0,w,h);
+    // 网格
+    ctx.strokeStyle='rgba(0,240,255,0.06)';
+    ctx.lineWidth=1;
+    for(let i=0;i<=COLS;i++){
+      ctx.beginPath();ctx.moveTo(i*CELL,0);ctx.lineTo(i*CELL,h);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(0,i*CELL);ctx.lineTo(w,i*CELL);ctx.stroke();
+    }
+    // 边框光
+    ctx.strokeStyle='rgba(0,240,255,0.5)';
+    ctx.lineWidth=2;
+    ctx.strokeRect(1,1,w-2,h-2);
+
+    // 食物（脉动）
+    const t=performance.now()/300;
+    const pulse=0.5+0.5*Math.sin(t);
+    const fx=(food.x+0.5)*CELL, fy=(food.y+0.5)*CELL;
+    const fr=CELL*0.35*(1+0.15*pulse);
+    ctx.save();
+    ctx.shadowColor='#ff0055';ctx.shadowBlur=20+15*pulse;
+    const fg=ctx.createRadialGradient(fx,fy,0,fx,fy,fr);
+    fg.addColorStop(0,'#ffffff');
+    fg.addColorStop(0.4,'#ff0055');
+    fg.addColorStop(1,'rgba(255,0,85,0)');
+    ctx.fillStyle=fg;
+    ctx.beginPath();ctx.arc(fx,fy,fr,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+
+    // 蛇身
+    for(let i=snake.length-1;i>=0;i--){
+      const s=snake[i];
+      const x=s.x*CELL, y=s.y*CELL;
+      const pad=CELL*0.12;
+      const isHead=i===0;
+      ctx.save();
+      ctx.shadowColor=isHead?'#00f0ff':'#39ff14';
+      ctx.shadowBlur=isHead?22:12;
+      const grad=ctx.createLinearGradient(x,y,x+CELL,y+CELL);
+      if(isHead){
+        grad.addColorStop(0,'#00f0ff');grad.addColorStop(1,'#bf00ff');
+      }else{
+        const a=1-i/snake.length*0.6;
+        grad.addColorStop(0,`rgba(57,255,20,${a})`);
+        grad.addColorStop(1,`rgba(0,240,255,${a*0.7})`);
+      }
+      ctx.fillStyle=grad;
+      roundRect(ctx,x+pad,y+pad,CELL-2*pad,CELL-2*pad,CELL*0.25);
+      ctx.fill();
+      ctx.restore();
+      if(isHead){
+        // 眼睛
+        ctx.fillStyle='#06010f';
+        const ex=x+CELL/2, ey=y+CELL/2;
+        const off=CELL*0.18;
+        ctx.beginPath();ctx.arc(ex+dir.x*off-dir.y*off*0.6,ey+dir.y*off-dir.x*off*0.6,CELL*0.08,0,Math.PI*2);ctx.fill();
+        ctx.beginPath();ctx.arc(ex+dir.x*off+dir.y*off*0.6,ey+dir.y*off+dir.x*off*0.6,CELL*0.08,0,Math.PI*2);ctx.fill();
+      }
+    }
+
+    // 粒子
+    for(let i=particles.length-1;i>=0;i--){
+      const p=particles[i];
+      p.x+=p.vx;p.y+=p.vy;p.vx*=0.92;p.vy*=0.92;p.life-=0.03;
+      if(p.life<=0){particles.splice(i,1);continue;}
+      ctx.save();
+      ctx.globalAlpha=Math.max(0,p.life);
+      ctx.shadowColor=p.color;ctx.shadowBlur=12;
+      ctx.fillStyle=p.color;
+      ctx.beginPath();ctx.arc(p.x,p.y,2.5*p.life,0,Math.PI*2);ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function roundRect(c,x,y,w,h,r){
+    r=Math.min(r,w/2,h/2);
+    c.beginPath();
+    c.moveTo(x+r,y);
+    c.arcTo(x+w,y,x+w,y+h,r);
+    c.arcTo(x+w,y+h,x,y+h,r);
+    c.arcTo(x,y+h,x,y,r);
+    c.arcTo(x,y,x+w,y,r);
+    c.closePath();
+  }
+
+  function loop(now){
+    if(!running)return;
+    const dt=now-last; last=now;
+    const interval=Math.max(55, 150-speed*12);
+    acc+=dt;
+    if(acc>=interval){acc=0;step();}
+    draw();
+    if(alive)requestAnimationFrame(loop);
+    else draw();
+  }
+
+  function setDir(nx,ny){
+    if(nx===-dir.x&&ny===-dir.y)return; // 不能反向
+    nextDir={x:nx,y:ny};
+  }
+
+  window.addEventListener('keydown',e=>{
+    const k=e.key;
+    if(k==='ArrowUp'||k==='w'||k==='W'){setDir(0,-1);e.preventDefault();}
+    else if(k==='ArrowDown'||k==='s'||k==='S'){setDir(0,1);e.preventDefault();}
+    else if(k==='ArrowLeft'||k==='a'||k==='A'){setDir(-1,0);e.preventDefault();}
+    else if(k==='ArrowRight'||k==='d'||k==='D'){setDir(1,0);e.preventDefault();}
+    else if(k===' '){
+      if(alive){
+        running=!running;
+        if(running){hideOverlay();last=performance.now();requestAnimationFrame(loop);}
+        else{showOverlay('PAUSED','按 <b style="color:var(--green)">空格</b> 继续','继续游戏');}
+      }
+      e.preventDefault();
+    }else if(k==='r'||k==='R'){start();}
+  });
+
+  startBtn.addEventListener('click',start);
+
+  // 移动端方向键
+  const dpad=document.getElementById('dpad');
+  dpad.querySelector('.u').addEventListener('click',()=>setDir(0,-1));
+  dpad.querySelector('.d').addEventListener('click',()=>setDir(0,1));
+  dpad.querySelector('.l').addEventListener('click',()=>setDir(-1,0));
+  dpad.querySelector('.r').addEventListener('click',()=>setDir(1,0));
+  // 触屏滑动
+  let touchStart=null;
+  canvas.addEventListener('touchstart',e=>{touchStart={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+  canvas.addEventListener('touchend',e=>{
+    if(!touchStart)return;
+    const t=e.changedTouches[0];
+    const dx=t.clientX-touchStart.x, dy=t.clientY-touchStart.y;
+    if(Math.abs(dx)>Math.abs(dy)){setDir(dx>0?1:-1,0);}
+    else{setDir(0,dy>0?1:-1);}
+    touchStart=null;
+  },{passive:true});
+
+  // 初始化
+  resize();
+  reset();
+  draw();
+  showOverlay('READY','使用 <b style="color:var(--green)">方向键</b> 或 <b style="color:var(--blue)">WASD</b> 控制蛇身<br>吃下霓虹光点，避开墙壁与自身','开始游戏');
+})();
+</script>
+</body>
+</html>
