@@ -61,6 +61,67 @@
     transition: background .2s;
   }
   .panel button:hover { background: #43a047; }
+  .panel button:active { transform: translateY(1px); }
+
+  .start-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 50% 40%, #2a5298 0%, #1e3c72 60%, #0f1f3d 100%);
+    z-index: 10;
+    transition: opacity .4s;
+  }
+  .start-overlay.hide { opacity: 0; pointer-events: none; }
+  .start-card {
+    text-align: center;
+    padding: 40px 50px;
+    background: rgba(30,42,74,.7);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    backdrop-filter: blur(8px);
+    animation: pop .5s ease;
+  }
+  @keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .start-card .logo { font-size: 64px; margin-bottom: 8px; animation: sway 2s ease-in-out infinite; }
+  @keyframes sway { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+  .start-card h2 { font-size: 30px; margin-bottom: 6px; letter-spacing: 3px; }
+  .start-card .sub { opacity: .7; margin-bottom: 24px; font-size: 14px; }
+  .start-card .keys {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+  .start-card .keys kbd {
+    display: inline-block;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: monospace;
+    font-size: 16px;
+    min-width: 34px;
+  }
+  .start-card .rules { text-align: left; margin: 0 auto 26px; max-width: 260px; font-size: 13px; line-height: 1.9; opacity: .85; }
+  .start-card .rules li { list-style: none; padding-left: 18px; position: relative; }
+  .start-card .rules li::before { content: "▸"; position: absolute; left: 0; color: #4caf50; }
+  .start-card .play-btn {
+    background: linear-gradient(135deg, #4caf50, #2e7d32);
+    border: none;
+    color: #fff;
+    padding: 12px 44px;
+    font-size: 18px;
+    border-radius: 30px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    box-shadow: 0 6px 20px rgba(76,175,80,.4);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .start-card .play-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(76,175,80,.55); }
+  .start-card .play-btn:active { transform: translateY(0); }
 </style>
 </head>
 <body>
@@ -71,6 +132,23 @@
   </div>
   <canvas id="game" width="400" height="400"></canvas>
   <div class="tip">使用方向键 ↑ ↓ ← → 控制蛇移动</div>
+
+  <div class="start-overlay" id="startOverlay">
+    <div class="start-card">
+      <div class="logo">🐍</div>
+      <h2>贪吃蛇</h2>
+      <div class="sub">经典街机 · 浏览器版</div>
+      <div class="keys">
+        <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd>
+      </div>
+      <ul class="rules">
+        <li>方向键控制蛇移动</li>
+        <li>吃到红色食物变长加分</li>
+        <li>撞墙或撞到自己游戏结束</li>
+      </ul>
+      <button class="play-btn" id="playBtn">开始游戏</button>
+    </div>
+  </div>
 
   <div class="overlay" id="overlay">
     <div class="panel">
@@ -93,7 +171,7 @@
   let best = +localStorage.getItem('snake_best') || 0;
   bestEl.textContent = best;
 
-  function init() {
+  function prepare() {
     snake = [{x:10, y:10}, {x:9, y:10}, {x:8, y:10}];
     dir = {x:1, y:0};
     nextDir = {x:1, y:0};
@@ -101,6 +179,10 @@
     speed = 180;
     scoreEl.textContent = 0;
     placeFood();
+  }
+
+  function init() {
+    prepare();
     clearInterval(timer);
     timer = setInterval(tick, speed);
   }
@@ -169,7 +251,12 @@
     init();
   });
 
-  init();
+  document.getElementById('playBtn').addEventListener('click', () => {
+    document.getElementById('startOverlay').classList.add('hide');
+    init();
+  });
+
+  prepare();
   draw();
 </script>
 </body>
