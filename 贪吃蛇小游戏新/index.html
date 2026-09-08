@@ -280,6 +280,22 @@
 
   let snake, dir, nextDir, food, score, best, speed, alive, running, tick, acc, last;
   let particles=[];
+  let stars=[];
+  function initStars(){
+    stars=[];
+    const colors=['#00f0ff','#bf00ff','#ff0055','#39ff14'];
+    for(let i=0;i<70;i++){
+      stars.push({
+        x:Math.random()*canvas.width,
+        y:Math.random()*canvas.height,
+        r:Math.random()*1.6+0.4,
+        vx:(Math.random()-0.5)*0.35,
+        vy:(Math.random()-0.5)*0.35,
+        color:colors[Math.floor(Math.random()*colors.length)],
+        phase:Math.random()*Math.PI*2
+      });
+    }
+  }
 
   best=parseInt(localStorage.getItem('neon_snake_best')||'0',10);
   bestEl.textContent=best;
@@ -355,7 +371,7 @@
 
   function spawnParticles(cx,cy){
     const px=(cx+0.5)*CELL, py=(cy+0.5)*CELL;
-    for(let i=0;i<18;i++){
+    for(let i=0;i<34;i++){
       const a=Math.random()*Math.PI*2, sp=1+Math.random()*3;
       particles.push({x:px,y:py,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,color:Math.random()<0.5?'#ff0055':'#39ff14'});
     }
@@ -378,8 +394,23 @@
     ctx.lineWidth=2;
     ctx.strokeRect(1,1,w-2,h-2);
 
+    // 背景流动星点
+    const now=performance.now();
+    for(const s of stars){
+      s.x+=s.vx; s.y+=s.vy;
+      if(s.x<0)s.x+=w; else if(s.x>w)s.x-=w;
+      if(s.y<0)s.y+=h; else if(s.y>h)s.y-=h;
+      const tw=0.5+0.5*Math.sin(now/600+s.phase);
+      ctx.save();
+      ctx.globalAlpha=0.25+0.55*tw;
+      ctx.shadowColor=s.color; ctx.shadowBlur=8;
+      ctx.fillStyle=s.color;
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();
+      ctx.restore();
+    }
+
     // 食物（脉动）
-    const t=performance.now()/300;
+    const t=now/300;
     const pulse=0.5+0.5*Math.sin(t);
     const fx=(food.x+0.5)*CELL, fy=(food.y+0.5)*CELL;
     const fr=CELL*0.35*(1+0.15*pulse);
@@ -392,6 +423,19 @@
     ctx.fillStyle=fg;
     ctx.beginPath();ctx.arc(fx,fy,fr,0,Math.PI*2);ctx.fill();
     ctx.restore();
+
+    // 食物环绕光点
+    for(let i=0;i<5;i++){
+      const ang=t*0.6+i*Math.PI*2/5;
+      const ox=fx+Math.cos(ang)*CELL*1.1;
+      const oy=fy+Math.sin(ang)*CELL*1.1;
+      ctx.save();
+      ctx.globalAlpha=0.5+0.5*pulse;
+      ctx.shadowColor='#ff0055';ctx.shadowBlur=10;
+      ctx.fillStyle='#ff88bb';
+      ctx.beginPath();ctx.arc(ox,oy,1.7,0,Math.PI*2);ctx.fill();
+      ctx.restore();
+    }
 
     // 蛇身
     for(let i=snake.length-1;i>=0;i--){
@@ -503,6 +547,7 @@
 
   // 初始化
   resize();
+  initStars();
   reset();
   draw();
   showOverlay('READY','使用 <b style="color:var(--green)">方向键</b> 或 <b style="color:var(--blue)">WASD</b> 控制蛇身<br>吃下霓虹光点，避开墙壁与自身','开始游戏');
