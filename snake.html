@@ -17,12 +17,7 @@
     user-select: none;
   }
   h1 { margin-bottom: 12px; font-size: 28px; letter-spacing: 2px; }
-  .info {
-    display: flex;
-    gap: 24px;
-    margin-bottom: 16px;
-    font-size: 16px;
-  }
+  .info { display: flex; gap: 24px; margin-bottom: 16px; font-size: 16px; }
   .info span { background: rgba(255,255,255,.12); padding: 6px 14px; border-radius: 20px; }
   canvas {
     background: #0f1f3d;
@@ -32,92 +27,55 @@
   }
   .tip { margin-top: 14px; font-size: 13px; opacity: .75; }
   .overlay {
-    position: fixed;
-    inset: 0;
-    display: none;
-    align-items: center;
-    justify-content: center;
+    position: fixed; inset: 0;
+    display: none; align-items: center; justify-content: center;
     background: rgba(0,0,0,.55);
-    backdrop-filter: blur(4px);
   }
   .overlay.show { display: flex; }
   .panel {
-    background: #1e2a4a;
-    padding: 30px 40px;
-    border-radius: 12px;
-    text-align: center;
-    box-shadow: 0 10px 40px rgba(0,0,0,.5);
+    background: #1e2a4a; padding: 30px 40px; border-radius: 12px;
+    text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,.5);
   }
   .panel h2 { font-size: 24px; margin-bottom: 10px; }
   .panel p { margin-bottom: 20px; opacity: .85; }
   .panel button {
-    background: #4caf50;
-    border: none;
-    color: #fff;
-    padding: 10px 28px;
-    font-size: 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background .2s;
+    background: #4caf50; border: none; color: #fff;
+    padding: 10px 28px; font-size: 16px; border-radius: 6px;
+    cursor: pointer; transition: background .2s;
   }
   .panel button:hover { background: #43a047; }
   .panel button:active { transform: translateY(1px); }
 
   .start-overlay {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
     background: radial-gradient(circle at 50% 40%, #2a5298 0%, #1e3c72 60%, #0f1f3d 100%);
-    z-index: 10;
-    transition: opacity .4s;
+    z-index: 10; transition: opacity .4s;
   }
   .start-overlay.hide { opacity: 0; pointer-events: none; }
   .start-card {
-    text-align: center;
-    padding: 40px 50px;
-    background: rgba(30,42,74,.7);
-    border: 1px solid rgba(255,255,255,.15);
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.5);
-    backdrop-filter: blur(8px);
+    text-align: center; padding: 40px 50px;
+    background: rgba(30,42,74,.7); border: 1px solid rgba(255,255,255,.15);
+    border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.5);
     animation: pop .5s ease;
   }
   @keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-  .start-card .logo { font-size: 64px; margin-bottom: 8px; animation: sway 2s ease-in-out infinite; }
-  @keyframes sway { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+  .start-card .logo { font-size: 64px; margin-bottom: 8px; }
   .start-card h2 { font-size: 30px; margin-bottom: 6px; letter-spacing: 3px; }
   .start-card .sub { opacity: .7; margin-bottom: 24px; font-size: 14px; }
-  .start-card .keys {
-    display: flex;
-    justify-content: center;
-    gap: 6px;
-    margin-bottom: 24px;
-  }
+  .start-card .keys { display: flex; justify-content: center; gap: 6px; margin-bottom: 24px; }
   .start-card .keys kbd {
-    display: inline-block;
-    background: rgba(255,255,255,.12);
-    border: 1px solid rgba(255,255,255,.2);
-    border-radius: 6px;
-    padding: 6px 10px;
-    font-family: monospace;
-    font-size: 16px;
-    min-width: 34px;
+    display: inline-block; background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.2); border-radius: 6px;
+    padding: 6px 10px; font-family: monospace; font-size: 16px; min-width: 34px;
   }
   .start-card .rules { text-align: left; margin: 0 auto 26px; max-width: 260px; font-size: 13px; line-height: 1.9; opacity: .85; }
   .start-card .rules li { list-style: none; padding-left: 18px; position: relative; }
   .start-card .rules li::before { content: "▸"; position: absolute; left: 0; color: #4caf50; }
   .start-card .play-btn {
-    background: linear-gradient(135deg, #4caf50, #2e7d32);
-    border: none;
-    color: #fff;
-    padding: 12px 44px;
-    font-size: 18px;
-    border-radius: 30px;
-    cursor: pointer;
-    letter-spacing: 2px;
-    box-shadow: 0 6px 20px rgba(76,175,80,.4);
+    background: linear-gradient(135deg, #4caf50, #2e7d32); border: none; color: #fff;
+    padding: 12px 44px; font-size: 18px; border-radius: 30px; cursor: pointer;
+    letter-spacing: 2px; box-shadow: 0 6px 20px rgba(76,175,80,.4);
     transition: transform .15s, box-shadow .15s;
   }
   .start-card .play-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(76,175,80,.55); }
@@ -138,9 +96,7 @@
       <div class="logo">🐍</div>
       <h2>贪吃蛇</h2>
       <div class="sub">经典街机 · 浏览器版</div>
-      <div class="keys">
-        <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd>
-      </div>
+      <div class="keys"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd></div>
       <ul class="rules">
         <li>方向键控制蛇移动</li>
         <li>吃到红色食物变长加分</li>
@@ -158,6 +114,7 @@
     </div>
   </div>
 
+
 <script>
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
@@ -165,7 +122,7 @@
   const COLS = canvas.width / GRID;
   const ROWS = canvas.height / GRID;
 
-  let snake, dir, nextDir, food, score, timer, speed;
+  let snake, dir, nextDir, food, score, timer, speed, traps;
   const scoreEl = document.getElementById('score');
   const bestEl = document.getElementById('best');
   let best = +localStorage.getItem('snake_best') || 0;
@@ -178,7 +135,28 @@
     score = 0;
     speed = 180;
     scoreEl.textContent = 0;
+    placeTraps();
     placeFood();
+  }
+
+  function isOccupied(x, y) {
+    return snake.some(s => s.x===x && s.y===y) ||
+           traps.some(t => t.x===x && t.y===y) ||
+           (food && food.x===x && food.y===y);
+  }
+
+  function placeTraps() {
+    traps = [];
+    const count = 6;
+    let attempts = 0;
+    while (traps.length < count && attempts < 300) {
+      attempts++;
+      const x = Math.floor(Math.random()*COLS);
+      const y = Math.floor(Math.random()*ROWS);
+      if (isOccupied(x, y)) continue;
+      if (y === 10 && x >= 6) continue;
+      traps.push({x, y});
+    }
   }
 
   function init() {
@@ -190,18 +168,16 @@
   function placeFood() {
     do {
       food = {x: Math.floor(Math.random()*COLS), y: Math.floor(Math.random()*ROWS)};
-    } while (snake.some(s => s.x===food.x && s.y===food.y));
+    } while (snake.some(s => s.x===food.x && s.y===food.y) || traps.some(t => t.x===food.x && t.y===food.y));
   }
 
   function tick() {
     dir = nextDir;
     const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
-
-    if (head.x<0 || head.x>=COLS || head.y<0 || head.y>=ROWS || snake.some(s => s.x===head.x && s.y===head.y)) {
+    if (head.x<0 || head.x>=COLS || head.y<0 || head.y>=ROWS || snake.some(s => s.x===head.x && s.y===head.y) || traps.some(t => t.x===head.x && t.y===head.y)) {
       gameOver();
       return;
     }
-
     snake.unshift(head);
     if (head.x===food.x && head.y===food.y) {
       score++;
@@ -218,11 +194,27 @@
   function draw() {
     ctx.fillStyle = '#0f1f3d';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
     ctx.fillStyle = '#e74c3c';
     ctx.beginPath();
     ctx.arc(food.x*GRID + GRID/2, food.y*GRID + GRID/2, GRID/2 - 2, 0, Math.PI*2);
     ctx.fill();
+
+    traps.forEach(t => {
+      const cx = t.x*GRID + GRID/2;
+      const cy = t.y*GRID + GRID/2;
+      ctx.fillStyle = '#9b59b6';
+      ctx.beginPath();
+      ctx.moveTo(cx, t.y*GRID + 3);
+      ctx.lineTo(t.x*GRID + GRID - 3, cy);
+      ctx.lineTo(cx, t.y*GRID + GRID - 3);
+      ctx.lineTo(t.x*GRID + 3, cy);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#c39bd3';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 3, 0, Math.PI*2);
+      ctx.fill();
+    });
 
     snake.forEach((s, i) => {
       ctx.fillStyle = i===0 ? '#4caf50' : `hsl(${120 - i*2}, 60%, ${50 - i*0.3}%)`;
