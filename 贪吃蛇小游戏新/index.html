@@ -278,7 +278,8 @@
   const ovText=document.getElementById('ovText');
   const startBtn=document.getElementById('startBtn');
 
-  let snake, dir, nextDir, food, score, best, speed, alive, running, tick, acc, last;
+  let snake, dir, nextDir, foods, score, best, speed, alive, running, tick, acc, last;
+  const FOOD_COUNT=5;
   let particles=[];
   let stars=[];
   function initStars(){
@@ -305,15 +306,19 @@
     dir={x:1,y:0}; nextDir={x:1,y:0};
     score=0; speed=1; alive=true; running=false;
     particles=[]; acc=0; tick=0;
-    placeFood();
+    foods=[];
+    for(let i=0;i<FOOD_COUNT;i++) placeFood();
     updateHUD();
   }
 
   function placeFood(){
-    while(true){
+    let tries=0;
+    while(tries++<500){
       const x=Math.floor(Math.random()*COLS);
       const y=Math.floor(Math.random()*ROWS);
-      if(!snake.some(s=>s.x===x&&s.y===y)){food={x,y};return;}
+      if(snake.some(s=>s.x===x&&s.y===y)) continue;
+      if(foods.some(f=>f.x===x&&f.y===y)) continue;
+      foods.push({x,y});return;
     }
   }
 
@@ -357,11 +362,13 @@
     // 撞自身
     if(snake.some(s=>s.x===head.x&&s.y===head.y)){gameOver();return;}
     snake.unshift(head);
-    if(head.x===food.x&&head.y===food.y){
+    const idx=foods.findIndex(f=>f.x===head.x&&f.y===head.y);
+    if(idx>=0){
       score+=10;
       const newSpeed=1+Math.floor(score/50);
       if(newSpeed!==speed)speed=newSpeed;
-      spawnParticles(food.x,food.y);
+      spawnParticles(foods[idx].x,foods[idx].y);
+      foods.splice(idx,1);
       placeFood();
       updateHUD();
     }else{
@@ -412,29 +419,31 @@
     // 食物（脉动）
     const t=now/300;
     const pulse=0.5+0.5*Math.sin(t);
-    const fx=(food.x+0.5)*CELL, fy=(food.y+0.5)*CELL;
-    const fr=CELL*0.35*(1+0.15*pulse);
-    ctx.save();
-    ctx.shadowColor='#ff0055';ctx.shadowBlur=20+15*pulse;
-    const fg=ctx.createRadialGradient(fx,fy,0,fx,fy,fr);
-    fg.addColorStop(0,'#ffffff');
-    fg.addColorStop(0.4,'#ff0055');
-    fg.addColorStop(1,'rgba(255,0,85,0)');
-    ctx.fillStyle=fg;
-    ctx.beginPath();ctx.arc(fx,fy,fr,0,Math.PI*2);ctx.fill();
-    ctx.restore();
-
-    // 食物环绕光点
-    for(let i=0;i<5;i++){
-      const ang=t*0.6+i*Math.PI*2/5;
-      const ox=fx+Math.cos(ang)*CELL*1.1;
-      const oy=fy+Math.sin(ang)*CELL*1.1;
+    for(const food of foods){
+      const fx=(food.x+0.5)*CELL, fy=(food.y+0.5)*CELL;
+      const fr=CELL*0.35*(1+0.15*pulse);
       ctx.save();
-      ctx.globalAlpha=0.5+0.5*pulse;
-      ctx.shadowColor='#ff0055';ctx.shadowBlur=10;
-      ctx.fillStyle='#ff88bb';
-      ctx.beginPath();ctx.arc(ox,oy,1.7,0,Math.PI*2);ctx.fill();
+      ctx.shadowColor='#ff0055';ctx.shadowBlur=20+15*pulse;
+      const fg=ctx.createRadialGradient(fx,fy,0,fx,fy,fr);
+      fg.addColorStop(0,'#ffffff');
+      fg.addColorStop(0.4,'#ff0055');
+      fg.addColorStop(1,'rgba(255,0,85,0)');
+      ctx.fillStyle=fg;
+      ctx.beginPath();ctx.arc(fx,fy,fr,0,Math.PI*2);ctx.fill();
       ctx.restore();
+
+      // 食物环绕光点
+      for(let i=0;i<5;i++){
+        const ang=t*0.6+i*Math.PI*2/5;
+        const ox=fx+Math.cos(ang)*CELL*1.1;
+        const oy=fy+Math.sin(ang)*CELL*1.1;
+        ctx.save();
+        ctx.globalAlpha=0.5+0.5*pulse;
+        ctx.shadowColor='#ff0055';ctx.shadowBlur=10;
+        ctx.fillStyle='#ff88bb';
+        ctx.beginPath();ctx.arc(ox,oy,1.7,0,Math.PI*2);ctx.fill();
+        ctx.restore();
+      }
     }
 
     // 蛇身
